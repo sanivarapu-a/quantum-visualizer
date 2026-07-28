@@ -1,0 +1,170 @@
+Quantum Composer — Frontend Specification
+1. Overview
+
+Build a Next.js (App Router) frontend for a quantum circuit composer, modeled after IBM Quantum Composer. This spec covers UI structure and component architecture only. All business logic (circuit simulation, gate placement, QASM generation) is stubbed as empty handler functions — implementation comes in a later pass.
+
+Stack:
+
+Next.js 14+, App Router, TypeScript
+Tailwind CSS for styling
+No state management library yet — use local useState/useReducer stubs
+Component-per-file, colocated under components/composer/
+2. Layout structure
+
+Single page (app/composer/page.tsx) with this region hierarchy:
+
+ComposerLayout
+├── ComposerToolbar        (top bar: title, Add Qubit, Clear, Run)
+├── ComposerBody           (flex row)
+│   ├── GatePalette         (left sidebar, fixed width ~160px)
+│   └── CircuitCanvas       (center, flex-1)
+└── ComposerBottomPanel     (tabbed: Results / Explain / Code / Bloch Sphere)
+
+ComposerBottomPanel owns its own tab state (activeTab) and renders one of four child panels.
+
+3. Component breakdown
+3.1 ComposerToolbar
+
+Path: components/composer/ComposerToolbar.tsx
+
+Props:
+
+ts
+interface ComposerToolbarProps {
+  onAddQubit: () => void;
+  onClear: () => void;
+  onRun: () => void;
+}
+
+Renders title/icon on the left, three buttons on the right (Add qubit, Clear, Run — Run visually distinct as the primary action). All three handlers are passed in as no-op stubs from the parent page for now.
+
+3.2 GatePalette
+
+Path: components/composer/GatePalette.tsx
+
+Renders gate categories as labeled sections, each a grid of GateIcon buttons.
+
+Gate data model (define in lib/gates.ts):
+
+ts
+interface GateDefinition {
+  id: string;          // "h", "x", "rx", "cx", etc.
+  label: string;        // display symbol, e.g. "H", "Rx"
+  category: "single-qubit" | "rotation" | "multi-qubit" | "other";
+  qubitCount: 1 | 2 | 3;
+  description: string;   // used later in tooltips / education panel
+}
+
+Seed data (single-qubit: H, X, Y, Z, S, T; rotation: Rx, Ry, Rz; multi-qubit: CNOT, SWAP, Toffoli/CCX; other: Measure, Reset, Barrier).
+
+GatePalette maps over categories and renders a GateIcon per gate. GateIcon is draggable (draggable={true}) with onDragStart stubbed to set event.dataTransfer with the gate id — no drop logic yet, that lives in CircuitCanvas.
+
+Props:
+
+ts
+interface GatePaletteProps {
+  gates: GateDefinition[];
+  onGateDragStart: (gate: GateDefinition) => void; // stub
+}
+3.3 CircuitCanvas
+
+Path: components/composer/CircuitCanvas.tsx
+
+Renders one horizontal QubitLine per qubit in circuit state, plus placed GateChip elements positioned along each line.
+
+Data model (define in lib/circuit.ts):
+
+ts
+interface PlacedGate {
+  gateId: string;
+  qubitIndices: number[]; // which qubit(s) it acts on
+  timeStep: number;        // horizontal position in the circuit
+  id: string;               // unique instance id
+}
+
+interface CircuitState {
+  qubitCount: number;
+  gates: PlacedGate[];
+}
+
+Props:
+
+ts
+interface CircuitCanvasProps {
+  circuit: CircuitState;
+  onDropGate: (gateId: string, qubitIndex: number, timeStep: number) => void; // stub
+  onRemoveGate: (gateInstanceId: string) => void; // stub
+}
+
+Each QubitLine renders:
+
+a label (q0, q1, ...)
+a horizontal connector line
+any GateChips placed on it, positioned via time step → left-offset
+for multi-qubit gates, a vertical connector between the qubit lines involved and a control dot on the control qubit
+
+onDrop / onDragOver on the canvas are stubbed (event.preventDefault() only, no state mutation).
+
+3.4 ComposerBottomPanel
+
+Path: components/composer/ComposerBottomPanel.tsx
+
+Manages activeTab: "results" | "explain" | "code" | "bloch" via local useState. Renders a row of tab buttons + the corresponding panel.
+
+ts
+type BottomTab = "results" | "explain" | "code" | "bloch";
+
+Sub-components, each in its own file:
+
+ResultsPanel — bar chart placeholder showing measurement probabilities per basis state. Props: probabilities: Record<string, number> (stub with empty object / mock data for now).
+ExplainPanel — plain-text educational walkthrough of the circuit. Props: explanation: string (stub placeholder text).
+CodePanel — two side-by-side read-only code blocks: OpenQASM and Qiskit. Props: qasmCode: string; qiskitCode: string. Include a copy button per block with a stubbed onCopy handler.
+BlochSpherePanel — placeholder container per qubit (canvas/SVG target for a future 3D Bloch sphere render). Props: qubitCount: number. Render one empty bordered box per qubit for now.
+4. State ownership
+
+For this pass, keep all circuit/UI state in the page component (app/composer/page.tsx) and pass down via props — no context or global store yet:
+
+ts
+const [circuit, setCircuit] = useState<CircuitState>({ qubitCount: 2, gates: [] });
+const [activeTab, setActiveTab] = useState<BottomTab>("results");
+
+All handlers passed to children (onAddQubit, onClear, onRun, onDropGate, onRemoveGate, onCopy) should be defined as empty functions with a // TODO: implement comment and a console.log of their arguments, so behavior is visibly traceable during dev without doing anything yet.
+
+5. Styling conventions
+Tailwind utility classes only, no CSS modules.
+Flat design: hairline borders (border border-gray-200 / dark equivalent), no shadows except focus rings, no gradients.
+Consistent spacing scale: gap-2/gap-3 for tight groups, p-4 for panel padding.
+Icons via lucide-react (already common in Next.js projects) — map each toolbar/action to a semantically named icon (Plus, Trash2, Play, BarChart3, BookOpen, Code2, CircleDot for Bloch sphere).
+Support dark mode via Tailwind's dark: variants throughout — don't hardcode colors that only work in light mode.
+Gate chips and palette icons: fixed square aspect ratio, rounded corners (rounded-md), border, centered label text.
+6. File structure
+app/
+  composer/
+    page.tsx
+components/
+  composer/
+    ComposerToolbar.tsx
+    GatePalette.tsx
+    GateIcon.tsx
+    CircuitCanvas.tsx
+    QubitLine.tsx
+    GateChip.tsx
+    ComposerBottomPanel.tsx
+    ResultsPanel.tsx
+    ExplainPanel.tsx
+    CodePanel.tsx
+    BlochSpherePanel.tsx
+lib/
+  gates.ts        # GateDefinition[] seed data
+  circuit.ts       # CircuitState, PlacedGate types + helpers (stubbed)
+7. Explicit non-goals for this pass
+No real circuit simulation or probability calculation.
+No real QASM/Qiskit code generation — render static placeholder code.
+No drag-and-drop persistence — visual drag affordance only.
+No backend/API calls.
+No tests yet.
+8. Acceptance criteria
+npm run dev renders the composer page matching the agreed layout (toolbar, left palette, center canvas, tabbed bottom panel).
+All interactive elements (buttons, tabs, drag handles) are present and wired to stub handlers — nothing throws, nothing is implemented.
+Fully responsive down to ~1024px width; below that, note as a follow-up (not required for this pass).
+Dark mode toggles correctly via Tailwind's dark: classes.
