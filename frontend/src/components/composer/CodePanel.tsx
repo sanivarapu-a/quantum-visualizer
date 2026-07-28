@@ -1,5 +1,3 @@
-"use client";
-
 import { Copy } from "lucide-react";
 
 interface CodePanelProps {
@@ -7,46 +5,61 @@ interface CodePanelProps {
   qiskitCode: string;
 }
 
+interface CodeBlockProps {
+  title: string;
+  code: string;
+}
+
 function CodeBlock({
   title,
   code,
-  onCopy,
-}: {
-  title: string;
-  code: string;
-  onCopy: () => void;
-}) {
+}: CodeBlockProps) {
+  function handleCopy() {
+    // TODO: implement clipboard copying.
+    console.log("onCopy", title, code);
+  }
+
   return (
-    <div className="flex min-w-0 flex-1 flex-col rounded-lg border border-white/10 bg-white/[0.02]">
-      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
-        <span className="font-mono text-[11px] font-medium uppercase tracking-wider text-gray-500">
+    <div className="min-w-0 flex-1 overflow-hidden rounded-md border border-gray-200 dark:border-zinc-700">
+      <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-zinc-700">
+        <span className="text-xs font-semibold">
           {title}
         </span>
+
         <button
-          type="button"
-          onClick={onCopy}
-          title={`Copy ${title} code`}
-          className="rounded p-1 text-gray-500 transition-colors hover:text-cyan-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+          onClick={handleCopy}
+          aria-label={`Copy ${title}`}
+          className="rounded p-1 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-zinc-400 dark:hover:bg-zinc-800"
         >
-          <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+          <Copy size={14} />
         </button>
       </div>
-      <pre className="flex-1 overflow-auto p-3 font-mono text-xs leading-relaxed text-gray-300">
-        <code>{code || "// Nothing to show yet — build a circuit first."}</code>
+
+      <pre className="h-24 overflow-auto bg-gray-50 p-3 text-xs text-gray-600 dark:bg-zinc-950 dark:text-zinc-300">
+        <code>
+          {code ||
+            `// ${title} will appear here after running the circuit.`}
+        </code>
       </pre>
     </div>
   );
 }
 
-export default function CodePanel({ qasmCode, qiskitCode }: CodePanelProps) {
-  function handleCopy(label: string, code: string) {
-    console.log("onCopy (stub)", { label, code });
-  }
-
+export default function CodePanel({
+  qasmCode,
+  qiskitCode,
+}: CodePanelProps) {
   return (
-    <div className="flex h-full gap-3 overflow-hidden px-6 pb-6">
-      <CodeBlock title="OpenQASM" code={qasmCode} onCopy={() => handleCopy("qasm", qasmCode)} />
-      <CodeBlock title="Qiskit" code={qiskitCode} onCopy={() => handleCopy("qiskit", qiskitCode)} />
+    <div className="flex gap-3">
+      <CodeBlock
+        title="OpenQASM"
+        code={qasmCode}
+      />
+
+      <CodeBlock
+        title="Qiskit"
+        code={qiskitCode}
+      />
     </div>
   );
 }

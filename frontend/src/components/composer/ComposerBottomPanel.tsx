@@ -1,66 +1,106 @@
 "use client";
 
 import { useState } from "react";
-import { BarChart3, BookOpen, Code2, CircleDot } from "lucide-react";
+
+import {
+  BarChart3,
+  BookOpen,
+  CircleDot,
+  Code2,
+} from "lucide-react";
+
 import ResultsPanel from "./ResultsPanel";
 import ExplainPanel from "./ExplainPanel";
 import CodePanel from "./CodePanel";
 import BlochSpherePanel from "./BlochSpherePanel";
 
-export type BottomTab = "results" | "explain" | "code" | "bloch";
+export type BottomTab =
+  | "results"
+  | "explain"
+  | "code"
+  | "bloch";
 
 interface ComposerBottomPanelProps {
-  qubitCount: number;
   probabilities: Record<string, number>;
   explanation: string;
   qasmCode: string;
   qiskitCode: string;
+  qubitCount: number;
 }
 
-const TABS: { id: BottomTab; label: string; icon: typeof BarChart3 }[] = [
-  { id: "results", label: "Probabilities", icon: BarChart3 },
-  { id: "explain", label: "Explain", icon: BookOpen },
-  { id: "code", label: "Code", icon: Code2 },
-  { id: "bloch", label: "Bloch sphere", icon: CircleDot },
+const tabs = [
+  {
+    id: "results" as const,
+    label: "Results",
+    icon: BarChart3,
+  },
+  {
+    id: "explain" as const,
+    label: "Explain",
+    icon: BookOpen,
+  },
+  {
+    id: "code" as const,
+    label: "Code",
+    icon: Code2,
+  },
+  {
+    id: "bloch" as const,
+    label: "Bloch sphere",
+    icon: CircleDot,
+  },
 ];
 
-export default function ComposerBottomPanel({
-  qubitCount,
-  probabilities,
-  explanation,
-  qasmCode,
-  qiskitCode,
-}: ComposerBottomPanelProps) {
-  const [activeTab, setActiveTab] = useState<BottomTab>("results");
+export default function ComposerBottomPanel(
+  props: ComposerBottomPanelProps,
+) {
+  const [activeTab, setActiveTab] =
+    useState<BottomTab>("results");
 
   return (
-    <section className="flex h-64 shrink-0 flex-col border-t border-white/10 bg-[#0a0e17]">
-      <div className="flex shrink-0 gap-1 p-3">
-        {TABS.map(({ id, label, icon: Icon }) => {
-          const isActive = activeTab === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setActiveTab(id)}
-              className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
-                isActive
-                  ? "bg-white text-[#0a0e17]"
-                  : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-              {label}
-            </button>
-          );
-        })}
+    <section className="h-56 shrink-0 border-t border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="flex h-11 items-end gap-1 border-b border-gray-200 px-4 dark:border-zinc-800">
+        {tabs.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setActiveTab(id)}
+            className={`flex h-11 items-center gap-2 border-b-2 px-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 ${
+              activeTab === id
+                ? "border-indigo-600 text-indigo-700 dark:text-indigo-300"
+                : "border-transparent text-gray-500 hover:text-gray-800 dark:text-zinc-400 dark:hover:text-zinc-100"
+            }`}
+          >
+            <Icon size={15} />
+            {label}
+          </button>
+        ))}
       </div>
 
-      <div className="min-h-0 flex-1">
-        {activeTab === "results" && <ResultsPanel probabilities={probabilities} />}
-        {activeTab === "explain" && <ExplainPanel explanation={explanation} />}
-        {activeTab === "code" && <CodePanel qasmCode={qasmCode} qiskitCode={qiskitCode} />}
-        {activeTab === "bloch" && <BlochSpherePanel qubitCount={qubitCount} />}
+      <div className="h-[calc(100%-2.75rem)] overflow-auto p-4">
+        {activeTab === "results" && (
+          <ResultsPanel
+            probabilities={props.probabilities}
+          />
+        )}
+
+        {activeTab === "explain" && (
+          <ExplainPanel
+            explanation={props.explanation}
+          />
+        )}
+
+        {activeTab === "code" && (
+          <CodePanel
+            qasmCode={props.qasmCode}
+            qiskitCode={props.qiskitCode}
+          />
+        )}
+
+        {activeTab === "bloch" && (
+          <BlochSpherePanel
+            qubitCount={props.qubitCount}
+          />
+        )}
       </div>
     </section>
   );

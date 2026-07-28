@@ -1,15 +1,22 @@
-"use client";
+import { BookOpen } from "lucide-react";
 
 interface ExplainPanelProps {
   explanation: string;
 }
 
-export default function ExplainPanel({ explanation }: ExplainPanelProps) {
+export default function ExplainPanel({
+  explanation,
+}: ExplainPanelProps) {
   return (
-    <div className="h-full overflow-y-auto px-6 py-4">
-      <p className="max-w-2xl text-sm leading-relaxed text-gray-400">
-        {explanation || "Build a circuit to see a step-by-step explanation of what it does."}
-      </p>
+    <div className="flex h-36 items-center justify-center">
+      <div className="max-w-xl text-center text-gray-500 dark:text-zinc-400">
+        <BookOpen className="mx-auto" size={24} />
+
+        <p className="mt-2 text-sm">
+          {explanation ||
+            "Run your circuit to generate a step-by-step educational explanation."}
+        </p>
+      </div>
     </div>
   );
 }
