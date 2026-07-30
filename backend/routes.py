@@ -9,13 +9,11 @@ No Qiskit logic lives in this file.
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.models.circuit import Circuit, ToQiskitResponse
-from app.services.translator import build_qiskit_circuit, qiskit_circuit_to_code
-from app.db.session import init_db
-from app.routes.circuits import router as circuits_router
+from circuit import Circuit, ToQiskitResponse, RunRequest, RunResponse
+from translator import build_qiskit_circuit, qiskit_circuit_to_code, run_simulation
+from db.session import init_db
 
 app = FastAPI(title="QuantumVisualizer API")
-app.include_router(circuits_router)
 
 
 @app.on_event("startup")
@@ -51,3 +49,17 @@ def to_qiskit(circuit: Circuit):
 
     code = qiskit_circuit_to_code(qc)
     return ToQiskitResponse(code=code)
+
+
+@app.post("/circuits/run", response_model=RunResponse)
+def run_circuit(request: RunRequest):
+    """
+    Accepts a circuit + shot count, runs it on Qiskit's Aer simulator,
+    and returns measurement counts.
+    """
+    try:
+        counts = run_simulation(request.circuit, request.shots)
+    except (KeyError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return RunResponse(counts=counts, shots=request.shots)

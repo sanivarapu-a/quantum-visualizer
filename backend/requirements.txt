@@ -1,0 +1,19 @@
+# Web framework
+fastapi
+uvicorn[standard]
+ 
+# Data validation — Circuit/Gate/Qubit models in circuit.py use Pydantic v2
+# syntax (field_validator, model config), so pin the major version.
+pydantic>=2.0,<3.0
+ 
+# Quantum simulation — used in translator.py's build_qiskit_circuit /
+# run_simulation functions.
+qiskit
+qiskit-aer
+ 
+# Database — used by db/session.py for init_db(). Swap sqlite driver for
+# psycopg2-binary (or asyncpg) if you move off SQLite to Postgres later.
+## I need to fix the Database so that it aligns with what I'm actually using (I'm using 
+##SQLite for now. 
+# There also needs to be sqlmodel here for now. 
+ 

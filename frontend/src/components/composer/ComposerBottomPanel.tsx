@@ -26,6 +26,7 @@ interface ComposerBottomPanelProps {
   qasmCode: string;
   qiskitCode: string;
   qubitCount: number;
+  onTabChange: (tab: BottomTab) => void;
 }
 
 const tabs = [
@@ -63,7 +64,10 @@ export default function ComposerBottomPanel(
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
-            onClick={() => setActiveTab(id)}
+            onClick={() => {
+              setActiveTab(id);
+              props.onTabChange(id);
+            }}
             className={`flex h-11 items-center gap-2 border-b-2 px-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 ${
               activeTab === id
                 ? "border-indigo-600 text-indigo-700 dark:text-indigo-300"

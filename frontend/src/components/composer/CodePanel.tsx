@@ -5,6 +5,21 @@ interface CodePanelProps {
   qiskitCode: string;
 }
 
+
+import { serializeCircuit } from "@/lib/serializeCircuit";
+import { circuitToQiskit } from "@/lib/api";
+
+async function handleGenerateCode(circuitState: CircuitState) {
+  try {
+    const payload = serializeCircuit(circuitState);
+    const { code } = await circuitToQiskit(payload);
+    setGeneratedCode(code); // however CodePanel stores/displays it
+  } catch (err) {
+    console.error(err);
+    // surface err.message in the UI
+  }
+}
+
 interface CodeBlockProps {
   title: string;
   code: string;

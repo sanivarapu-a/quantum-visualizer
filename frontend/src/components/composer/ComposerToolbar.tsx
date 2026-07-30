@@ -1,57 +1,57 @@
-import { Atom, Play, Plus, Trash2 } from "lucide-react";
+"use client";
+
+import { MoreHorizontal, Play } from "lucide-react";
 
 interface ComposerToolbarProps {
   onAddQubit: () => void;
   onClear: () => void;
   onRun: () => void;
+  qubitCount?: number;
+  circuitName?: string;
+  isRunning?: boolean;
 }
 
 export default function ComposerToolbar({
   onAddQubit,
   onClear,
   onRun,
+  qubitCount,
+  circuitName = "Untitled circuit",
+  isRunning = false,
 }: ComposerToolbarProps) {
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5 dark:border-zinc-800 dark:bg-zinc-950">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-[#0a0e17] px-5">
       <div className="flex items-center gap-3">
-        <span className="grid size-9 place-items-center rounded-md border border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950 dark:text-indigo-300">
-          <Atom size={20} />
-        </span>
-
-        <div>
-          <h1 className="text-sm font-semibold">
-            Quantum Composer
-          </h1>
-
-          <p className="text-xs text-gray-500 dark:text-zinc-400">
-            Untitled circuit
-          </p>
-        </div>
+        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500" />
+        <span className="text-[15px] font-medium text-gray-100">{circuitName}</span>
       </div>
 
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={onAddQubit}
-          className="flex h-9 items-center gap-2 rounded-md border border-gray-200 px-3 text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-zinc-700 dark:hover:bg-zinc-900"
+          className="rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-gray-300 transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
         >
-          <Plus size={16} />
-          Add qubit
+          {qubitCount} qubit{qubitCount === 1 ? "" : "s"}
         </button>
 
         <button
-          onClick={onClear}
-          className="flex h-9 items-center gap-2 rounded-md border border-gray-200 px-3 text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-zinc-700 dark:hover:bg-zinc-900"
-        >
-          <Trash2 size={16} />
-          Clear
-        </button>
-
-        <button
+          type="button"
           onClick={onRun}
-          className="flex h-9 items-center gap-2 rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          disabled={isRunning}
+          className="flex items-center gap-1.5 rounded-full bg-cyan-400 px-4 py-1.5 text-xs font-semibold text-[#0a0e17] transition-colors hover:bg-cyan-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0e17]"
         >
-          <Play size={16} fill="currentColor" />
-          Run
+          <Play className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+           {isRunning ? "Running…" : "Run"}
+        </button>
+
+        <button
+          type="button"
+          onClick={onClear}
+          title="Clear circuit"
+          className="rounded-full p-1.5 text-gray-400 transition-colors hover:bg-white/10 hover:text-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+        >
+          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
     </header>

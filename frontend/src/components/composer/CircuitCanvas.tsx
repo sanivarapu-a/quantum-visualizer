@@ -25,17 +25,45 @@ export default function CircuitCanvas({
     event.preventDefault();
   }
 
-  function handleDrop(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
+function handleDrop(event: DragEvent<HTMLDivElement>) {
+  event.preventDefault();
 
-    const gateId =
-      event.dataTransfer.getData("text/plain");
+  const gateId =
+    event.dataTransfer.getData("text/plain");
 
-    // TODO: calculate the real qubit and time step.
-    console.log("canvasDrop", gateId);
-
-    onDropGate(gateId, 0, 0);
+  if (!gateId) {
+    return;
   }
+
+  const bounds =
+    event.currentTarget.getBoundingClientRect();
+
+  const labelWidth = 100;
+  const headerHeight = 100;
+  const qubitLineHeight = 80;
+  const timeStepWidth = 72;
+
+  const relativeX =
+    event.clientX - bounds.left - labelWidth;
+
+  const relativeY =
+    event.clientY - bounds.top - headerHeight;
+
+  const qubitIndex = Math.max(
+    0,
+    Math.min(
+      circuit.qubitCount - 1,
+      Math.floor(relativeY / qubitLineHeight),
+    ),
+  );
+
+  const timeStep = Math.max(
+    0,
+    Math.floor(relativeX / timeStepWidth),
+  );
+
+  onDropGate(gateId, qubitIndex, timeStep);
+}
 
   return (
     <section
