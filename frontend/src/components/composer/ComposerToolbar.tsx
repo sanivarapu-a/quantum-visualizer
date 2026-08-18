@@ -1,14 +1,13 @@
-// ComposerToolbar.tsx — unchanged, no API calls happen here.
-// See note below the code block for where to actually add toast.
 "use client";
 
-import { MoreHorizontal, Play, Save } from "lucide-react";
+import { Download, MoreHorizontal, Play, Save } from "lucide-react";
 
 interface ComposerToolbarProps {
   onAddQubit: () => void;
   onClear: () => void;
   onRun: () => void;
   onSave: () => void;
+  onExportJSON: () => void;
   qubitCount?: number;
   circuitName?: string;
   isRunning?: boolean;
@@ -21,6 +20,7 @@ export default function ComposerToolbar({
   onClear,
   onRun,
   onSave,
+  onExportJSON,
   qubitCount,
   circuitName = "Untitled circuit",
   isRunning = false,
@@ -41,6 +41,15 @@ export default function ComposerToolbar({
           className="rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-gray-300 transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
         >
           {qubitCount} qubit{qubitCount === 1 ? "" : "s"}
+        </button>
+
+        <button
+          type="button"
+          onClick={onExportJSON}
+          title="Download circuit as JSON"
+          className="rounded-full p-1.5 text-gray-400 transition-colors hover:bg-white/10 hover:text-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+        >
+          <Download className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
 
         <button

@@ -2,6 +2,9 @@
 FastAPI app.
 """
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from typing import Optional
 
 from fastapi import FastAPI, APIRouter, Depends, HTTPException, Header

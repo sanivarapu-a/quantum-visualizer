@@ -17,3 +17,13 @@ qiskit-aer
 ##SQLite for now. 
 # There also needs to be sqlmodel here for now. 
  
+ # Database
+sqlmodel
+psycopg2-binary   # Postgres driver — see below for SQLite vs Postgres
+
+# Auth
+passlib[bcrypt]
+python-jose[cryptography]
+
+#environment variables
+python-dotenv

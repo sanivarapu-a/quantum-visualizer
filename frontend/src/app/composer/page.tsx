@@ -24,6 +24,7 @@ import {
 } from "../../lib/api";
 import EducationPane from "../../components/composer/EducationPane";
 import { ALGORITHMS } from "../../lib/algorithms/algorithmInfo";
+import { downloadFile } from "../../lib/downloadFile";
 
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
@@ -199,6 +200,12 @@ export default function ComposerPage() {
     setRootId(null);
   }
 
+  function handleExportJSON() {
+    const payload = serializeCircuit(circuit);
+    downloadFile("circuit.json", JSON.stringify(payload, null, 2), "application/json");
+    toast.success("Circuit downloaded.");
+  }
+
   return (
     <main className="flex h-screen min-w-[1024px] flex-col overflow-hidden bg-gray-50 text-gray-900 dark:bg-zinc-950 dark:text-zinc-100">
       <ComposerToolbar
@@ -206,6 +213,7 @@ export default function ComposerPage() {
         onClear={handleClear}
         onRun={handleRun}
         onSave={handleSave}
+        onExportJSON={handleExportJSON}
         qubitCount={circuit.qubitCount}
         isRunning={isRunning}
         isSaving={isSaving}

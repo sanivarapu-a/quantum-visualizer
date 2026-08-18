@@ -91,16 +91,12 @@ def qiskit_circuit_to_qasm(qc: QuantumCircuit) -> str:
 
 
 def run_simulation(circuit: Circuit, shots: int = 1024) -> dict[str, int]:
-    """
-    Builds the Qiskit circuit and runs it on Aer's simulator, returning
-    measurement counts, e.g. {"000": 512, "111": 512}.
-
-    If the circuit has no MEASURE gates (no classical registers), measures
-    all qubits by default so the user still gets a result.
-    """
     qc = build_qiskit_circuit(circuit)
 
-    if not qc.cregs:
+    has_measurements = any(
+        instruction.operation.name == "measure" for instruction in qc.data
+    )
+    if not has_measurements:
         qc.measure_all()
 
     simulator = AerSimulator()
