@@ -2,23 +2,16 @@
 
 import { useState } from "react";
 
-import {
-  BarChart3,
-  BookOpen,
-  CircleDot,
-  Code2,
-} from "lucide-react";
+import { BarChart3, BookOpen, CircleDot, Code2 } from "lucide-react";
 
 import ResultsPanel from "./ResultsPanel";
 import ExplainPanel from "./ExplainPanel";
 import CodePanel from "./CodePanel";
-import BlochSpherePanel from "./BlochSpherePanel";
 
-export type BottomTab =
-  | "results"
-  | "explain"
-  | "code"
-  | "bloch";
+export type BottomTab = "results" | "explain" | "code" | "bloch";
+
+import BlochSpherePanel, { type BlochVector } from "./BlochSpherePanel";
+import type { AlgorithmInfo } from "../../lib/algorithms/algorithmInfo";
 
 interface ComposerBottomPanelProps {
   probabilities: Record<string, number>;
@@ -26,37 +19,23 @@ interface ComposerBottomPanelProps {
   qasmCode: string;
   qiskitCode: string;
   qubitCount: number;
+  blochVectors: BlochVector[];
+  isFetchingBloch: boolean;
+  activeAlgorithm?: AlgorithmInfo;
   onTabChange: (tab: BottomTab) => void;
+  onGenerateQASM: () => Promise<void>;
+  isGeneratingQASM: boolean;
 }
 
 const tabs = [
-  {
-    id: "results" as const,
-    label: "Results",
-    icon: BarChart3,
-  },
-  {
-    id: "explain" as const,
-    label: "Explain",
-    icon: BookOpen,
-  },
-  {
-    id: "code" as const,
-    label: "Code",
-    icon: Code2,
-  },
-  {
-    id: "bloch" as const,
-    label: "Bloch sphere",
-    icon: CircleDot,
-  },
+  { id: "results" as const, label: "Results", icon: BarChart3 },
+  { id: "explain" as const, label: "Explain", icon: BookOpen },
+  { id: "code" as const, label: "Code", icon: Code2 },
+  { id: "bloch" as const, label: "Bloch sphere", icon: CircleDot },
 ];
 
-export default function ComposerBottomPanel(
-  props: ComposerBottomPanelProps,
-) {
-  const [activeTab, setActiveTab] =
-    useState<BottomTab>("results");
+export default function ComposerBottomPanel(props: ComposerBottomPanelProps) {
+  const [activeTab, setActiveTab] = useState<BottomTab>("results");
 
   return (
     <section className="h-56 shrink-0 border-t border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
@@ -81,15 +60,12 @@ export default function ComposerBottomPanel(
       </div>
 
       <div className="h-[calc(100%-2.75rem)] overflow-auto p-4">
-        {activeTab === "results" && (
-          <ResultsPanel
-            probabilities={props.probabilities}
-          />
-        )}
+        {activeTab === "results" && <ResultsPanel probabilities={props.probabilities} />}
 
         {activeTab === "explain" && (
           <ExplainPanel
             explanation={props.explanation}
+            activeAlgorithm={props.activeAlgorithm}
           />
         )}
 
@@ -97,12 +73,16 @@ export default function ComposerBottomPanel(
           <CodePanel
             qasmCode={props.qasmCode}
             qiskitCode={props.qiskitCode}
+            onGenerateQASM={props.onGenerateQASM}
+            isGeneratingQASM={props.isGeneratingQASM}
           />
         )}
 
         {activeTab === "bloch" && (
           <BlochSpherePanel
             qubitCount={props.qubitCount}
+            blochVectors={props.blochVectors}
+            isFetchingBloch={props.isFetchingBloch}
           />
         )}
       </div>

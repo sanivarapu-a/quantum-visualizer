@@ -26,6 +26,16 @@ TWO_QUBIT_GATES = {"CNOT", "CZ", "SWAP"}
 PARAMETRIZED_GATES = {"RX", "RY", "RZ"}
 
 
+
+
+class RunOptionsRequest(BaseModel):
+    shots: int = 1024
+
+    # this is because we chose to actually include all the 
+    # necessary infromation like which circuit object to run not in the 
+    # body of the request but in the url path itself. 
+
+
 class Qubit(BaseModel):
     id: str
     index: int
@@ -57,6 +67,7 @@ class Gate(BaseModel):
         return params
 
 
+
 class Circuit(BaseModel):
     id: str
     qubits: list[Qubit]
@@ -77,18 +88,62 @@ class Circuit(BaseModel):
                 )
         return gates
 
+class ExportRequest(BaseModel): 
+    name:str
+    circuit:Circuit
+
 
 # --- Request/response shapes for the API routes ---
 
 class ToQiskitResponse(BaseModel):
     code: str
 
+class ToQasmResponse(BaseModel):
+    code: str
 
+
+"""
+
+
+#Not needed anymore because we save before we run
 class RunRequest(BaseModel):
     circuit: Circuit
     shots: int = 1024
 
 
+"""
+
+
+
+
+"""
 class RunResponse(BaseModel):
     counts: dict[str, int]
     shots: int
+"""
+
+
+
+class BlochVector(BaseModel):
+    qubit: int
+    x: float
+    y: float
+    z: float
+
+class BlochResponse(BaseModel):
+    vectors: list[BlochVector]
+
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"

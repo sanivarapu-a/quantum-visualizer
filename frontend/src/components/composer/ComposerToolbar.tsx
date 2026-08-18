@@ -1,23 +1,31 @@
+// ComposerToolbar.tsx — unchanged, no API calls happen here.
+// See note below the code block for where to actually add toast.
 "use client";
 
-import { MoreHorizontal, Play } from "lucide-react";
+import { MoreHorizontal, Play, Save } from "lucide-react";
 
 interface ComposerToolbarProps {
   onAddQubit: () => void;
   onClear: () => void;
   onRun: () => void;
+  onSave: () => void;
   qubitCount?: number;
   circuitName?: string;
   isRunning?: boolean;
+  isSaving?: boolean;
+  canRun?: boolean;
 }
 
 export default function ComposerToolbar({
   onAddQubit,
   onClear,
   onRun,
+  onSave,
   qubitCount,
   circuitName = "Untitled circuit",
   isRunning = false,
+  isSaving = false,
+  canRun = false,
 }: ComposerToolbarProps) {
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-[#0a0e17] px-5">
@@ -37,12 +45,23 @@ export default function ComposerToolbar({
 
         <button
           type="button"
+          onClick={onSave}
+          disabled={isSaving}
+          className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-gray-300 transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Save className="h-3.5 w-3.5" aria-hidden="true" />
+          {isSaving ? "Saving…" : "Save"}
+        </button>
+
+        <button
+          type="button"
           onClick={onRun}
-          disabled={isRunning}
-          className="flex items-center gap-1.5 rounded-full bg-cyan-400 px-4 py-1.5 text-xs font-semibold text-[#0a0e17] transition-colors hover:bg-cyan-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0e17]"
+          disabled={isRunning || !canRun}
+          title={!canRun ? "Save the circuit before running" : undefined}
+          className="flex items-center gap-1.5 rounded-full bg-cyan-400 px-4 py-1.5 text-xs font-semibold text-[#0a0e17] transition-colors hover:bg-cyan-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0e17] disabled:cursor-not-allowed disabled:bg-cyan-400/30 disabled:text-gray-500"
         >
           <Play className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
-           {isRunning ? "Running…" : "Run"}
+          {isRunning ? "Running…" : "Run"}
         </button>
 
         <button

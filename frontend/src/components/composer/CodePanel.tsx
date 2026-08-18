@@ -1,23 +1,15 @@
+// CodePanel.tsx — this one actually gets the toast wiring, since it has real async
+// work happening inside it (clipboard copy + generate QASM).
+"use client";
+
 import { Copy } from "lucide-react";
+import { toast } from "sonner";
 
 interface CodePanelProps {
   qasmCode: string;
   qiskitCode: string;
-}
-
-
-import { serializeCircuit } from "@/lib/serializeCircuit";
-import { circuitToQiskit } from "@/lib/api";
-
-async function handleGenerateCode(circuitState: CircuitState) {
-  try {
-    const payload = serializeCircuit(circuitState);
-    const { code } = await circuitToQiskit(payload);
-    setGeneratedCode(code); // however CodePanel stores/displays it
-  } catch (err) {
-    console.error(err);
-    // surface err.message in the UI
-  }
+  onGenerateQASM: () => Promise<void>;
+  isGeneratingQASM: boolean;
 }
 
 interface CodeBlockProps {
@@ -25,22 +17,24 @@ interface CodeBlockProps {
   code: string;
 }
 
-function CodeBlock({
-  title,
-  code,
-}: CodeBlockProps) {
-  function handleCopy() {
-    // TODO: implement clipboard copying.
-    console.log("onCopy", title, code);
+function CodeBlock({ title, code }: CodeBlockProps) {
+  async function handleCopy() {
+    if (!code) {
+      toast.error(`No ${title} code to copy yet.`);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(code);
+      toast.success(`${title} copied to clipboard.`);
+    } catch {
+      toast.error(`Couldn't copy ${title}. Your browser may be blocking clipboard access.`);
+    }
   }
 
   return (
     <div className="min-w-0 flex-1 overflow-hidden rounded-md border border-gray-200 dark:border-zinc-700">
       <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-zinc-700">
-        <span className="text-xs font-semibold">
-          {title}
-        </span>
-
+        <span className="text-xs font-semibold">{title}</span>
         <button
           onClick={handleCopy}
           aria-label={`Copy ${title}`}
@@ -51,10 +45,7 @@ function CodeBlock({
       </div>
 
       <pre className="h-24 overflow-auto bg-gray-50 p-3 text-xs text-gray-600 dark:bg-zinc-950 dark:text-zinc-300">
-        <code>
-          {code ||
-            `// ${title} will appear here after running the circuit.`}
-        </code>
+        <code>{code || `// ${title} will appear here after running the circuit.`}</code>
       </pre>
     </div>
   );
@@ -63,18 +54,33 @@ function CodeBlock({
 export default function CodePanel({
   qasmCode,
   qiskitCode,
+  onGenerateQASM,
+  isGeneratingQASM,
 }: CodePanelProps) {
-  return (
-    <div className="flex gap-3">
-      <CodeBlock
-        title="OpenQASM"
-        code={qasmCode}
-      />
+  async function handleGenerateQASM() {
+    try {
+      await onGenerateQASM();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate QASM code.");
+    }
+  }
 
-      <CodeBlock
-        title="Qiskit"
-        code={qiskitCode}
-      />
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex justify-end">
+        <button
+          onClick={handleGenerateQASM}
+          disabled={isGeneratingQASM}
+          className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          {isGeneratingQASM ? "Generating…" : "Generate QASM code"}
+        </button>
+      </div>
+
+      <div className="flex gap-3">
+        <CodeBlock title="OpenQASM" code={qasmCode} />
+        <CodeBlock title="Qiskit" code={qiskitCode} />
+      </div>
     </div>
   );
 }

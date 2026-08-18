@@ -1,8 +1,8 @@
 "use client";
 
-
 import { useEffect, useState } from "react";
-
+import { toast } from "sonner";
+import type { BlochVector } from "../../components/composer/BlochSpherePanel";
 
 import ComposerToolbar from "../../components/composer/ComposerToolbar";
 import GatePalette from "../../components/composer/GatePalette";
@@ -14,7 +14,20 @@ import ComposerBottomPanel, {
 import { GATES, type GateDefinition } from "../../lib/gates";
 import { INITIAL_CIRCUIT, type CircuitState } from "../../lib/circuit";
 import { serializeCircuit } from "../../lib/serializeCircuit";
-import { circuitToQiskit, runCircuit} from "../../lib/api";
+import {
+  circuitToQiskit,
+  runCircuit,
+  generateQASM,
+  exportCircuit,
+  getBlochVectors,
+  type CircuitRecord,
+} from "../../lib/api";
+import EducationPane from "../../components/composer/EducationPane";
+import { ALGORITHMS } from "../../lib/algorithms/algorithmInfo";
+
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
 
 export default function ComposerPage() {
   const [circuit, setCircuit] = useState<CircuitState>(INITIAL_CIRCUIT);
@@ -25,6 +38,13 @@ export default function ComposerPage() {
   const [probabilities, setProbabilities] = useState<Record<string, number>>({});
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [selectedAlgo, setSelectedAlgo] = useState<string>("");
+  const activeAlgorithm = ALGORITHMS.find((a) => a.id === selectedAlgo);
+
+  const [savedCircuitId, setSavedCircuitId] = useState<number | null>(null);
+  const [rootId, setRootId] = useState<number | null>(null);
+  const [isDirty, setIsDirty] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Generate Qiskit code whenever the user views the Code tab.
   useEffect(() => {
@@ -36,9 +56,8 @@ export default function ComposerPage() {
         const payload = serializeCircuit(circuit);
         const { code } = await circuitToQiskit(payload);
         setQiskitCode(code);
-        // setQasmCode(...) — no QASM endpoint confirmed yet on the backend.
       } catch (error) {
-        console.error(error);
+        toast.error(errorMessage(error, "Failed to generate Qiskit code."));
       } finally {
         setIsGeneratingCode(false);
       }
@@ -52,6 +71,7 @@ export default function ComposerPage() {
       ...current,
       qubitCount: current.qubitCount + 1,
     }));
+    setIsDirty(true);
   }
 
   function handleClear() {
@@ -59,29 +79,52 @@ export default function ComposerPage() {
       ...current,
       gates: [],
     }));
+    setIsDirty(true);
   }
 
-
-
-// ...
-
-async function handleRun() {
-  setIsRunning(true);
-  try {
-    const payload = serializeCircuit(circuit);
-    const { counts, shots } = await runCircuit(payload);
-
-    const asProbabilities: Record<string, number> = {};
-    for (const [outcome, count] of Object.entries(counts)) {
-      asProbabilities[outcome] = count / shots;
+  async function handleSave() {
+    setIsSaving(true);
+    try {
+      const payload = serializeCircuit(circuit);
+      const record: CircuitRecord = await exportCircuit(
+        "Untitled circuit",
+        payload,
+        rootId ?? undefined,
+      );
+      setSavedCircuitId(record.id);
+      setRootId(record.root_id);
+      setIsDirty(false);
+      toast.success("Circuit saved.");
+    } catch (error) {
+      toast.error(errorMessage(error, "Failed to save circuit."));
+    } finally {
+      setIsSaving(false);
     }
-    setProbabilities(asProbabilities);
-  } catch (error) {
-    console.error(error);
-  } finally {
-    setIsRunning(false);
   }
-}
+
+  async function handleRun() {
+    if (savedCircuitId == null) return;
+
+    setIsRunning(true);
+    try {
+      const run = await runCircuit(savedCircuitId);
+      if (run.status === "failed") {
+        toast.error(run.error ?? "Circuit run failed.");
+        return;
+      }
+      const counts = run.result?.counts ?? {};
+      const asProbabilities: Record<string, number> = {};
+      for (const [outcome, count] of Object.entries(counts)) {
+        asProbabilities[outcome] = count / run.shots;
+      }
+      setProbabilities(asProbabilities);
+      toast.success("Circuit ran successfully.");
+    } catch (error) {
+      toast.error(errorMessage(error, "Failed to run circuit."));
+    } finally {
+      setIsRunning(false);
+    }
+  }
 
   function handleGateDragStart(gate: GateDefinition) {
     // TODO: implement drag state.
@@ -108,6 +151,7 @@ async function handleRun() {
       ...current,
       gates: [...current.gates, newGate],
     }));
+    setIsDirty(true);
   }
 
   function handleRemoveGate(gateInstanceId: string) {
@@ -115,6 +159,44 @@ async function handleRun() {
       ...current,
       gates: current.gates.filter((gate) => gate.id !== gateInstanceId),
     }));
+    setIsDirty(true);
+  }
+
+  const [blochVectors, setBlochVectors] = useState<BlochVector[]>([]);
+  const [isFetchingBloch, setIsFetchingBloch] = useState(false);
+
+  async function handleFetchBloch() {
+    setIsFetchingBloch(true);
+    try {
+      const payload = serializeCircuit(circuit);
+      const { vectors } = await getBlochVectors(payload);
+      setBlochVectors(vectors);
+    } catch (error) {
+      toast.error(errorMessage(error, "Failed to fetch Bloch vectors."));
+    } finally {
+      setIsFetchingBloch(false);
+    }
+  }
+
+  const [isGeneratingQASM, setIsGeneratingQASM] = useState(false);
+  async function handleQASMCode() {
+    setIsGeneratingQASM(true);
+    try {
+      const payload = serializeCircuit(circuit);
+      const { code } = await generateQASM(payload);
+      setQasmCode(code);
+    } catch (error) {
+      toast.error(errorMessage(error, "Failed to generate QASM code."));
+    } finally {
+      setIsGeneratingQASM(false);
+    }
+  }
+
+  function handleLoadCircuit(newCircuit: CircuitState) {
+    setCircuit(newCircuit);
+    setIsDirty(true);
+    setSavedCircuitId(null);
+    setRootId(null);
   }
 
   return (
@@ -123,11 +205,22 @@ async function handleRun() {
         onAddQubit={handleAddQubit}
         onClear={handleClear}
         onRun={handleRun}
+        onSave={handleSave}
         qubitCount={circuit.qubitCount}
+        isRunning={isRunning}
+        isSaving={isSaving}
+        canRun={savedCircuitId != null && !isDirty}
       />
 
       <div className="flex min-h-0 flex-1">
-        <GatePalette gates={GATES} onGateDragStart={handleGateDragStart} />
+        <div className="flex flex-col overflow-y-auto">
+          <GatePalette gates={GATES} onGateDragStart={handleGateDragStart} />
+          <EducationPane
+            selectedAlgo={selectedAlgo}
+            onSelectAlgo={setSelectedAlgo}
+            onLoadCircuit={handleLoadCircuit}
+          />
+        </div>
 
         <CircuitCanvas
           circuit={circuit}
@@ -142,7 +235,12 @@ async function handleRun() {
         explanation=""
         qasmCode={qasmCode}
         qiskitCode={qiskitCode}
+        blochVectors={blochVectors}
+        isFetchingBloch={isFetchingBloch}
+        activeAlgorithm={activeAlgorithm}
         onTabChange={setActiveTab}
+        onGenerateQASM={handleQASMCode}
+        isGeneratingQASM={isGeneratingQASM}
       />
     </main>
   );

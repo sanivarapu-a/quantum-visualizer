@@ -1,19 +1,20 @@
 """
 Circuit -> Qiskit translation.
 
-Deliberately has zero FastAPI/HTTP knowledge in this file. Both the
-/circuits/to-qiskit route and the /circuits/run route call
+Deliberately has zero FastAPI/HTTP knowledge in this file. Routes call
 build_qiskit_circuit() — this is the one place that understands how
 our Circuit JSON maps onto Qiskit's API, so it only needs to be
-correct once.
+correct once. QASM and Python-code output are both derived from the
+same built QuantumCircuit, rather than hand-generated separately, so
+there's only one source of truth for "what does this circuit mean."
 """
 
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
+from qiskit.qasm2 import dumps as qasm2_dumps
+from circuit import Circuit, Gate, BlochVector
+from qiskit.quantum_info import Statevector, partial_trace
 
-from circuit import Circuit, Gate
-
-# Maps our gate type strings to the QuantumCircuit method name to call.
 _SINGLE_QUBIT_NO_PARAM = {"H": "h", "X": "x", "Y": "y", "Z": "z"}
 _SINGLE_QUBIT_PARAM = {"RX": "rx", "RY": "ry", "RZ": "rz"}
 _TWO_QUBIT = {"CNOT": "cx", "CZ": "cz", "SWAP": "swap"}
@@ -21,7 +22,6 @@ _TWO_QUBIT = {"CNOT": "cx", "CZ": "cz", "SWAP": "swap"}
 
 def build_qiskit_circuit(circuit: Circuit) -> QuantumCircuit:
     """Convert a validated Circuit into an executable qiskit.QuantumCircuit."""
-
     qubit_index = {q.id: q.index for q in circuit.qubits}
     num_qubits = len(circuit.qubits)
     num_clbits = circuit.classical_bits or 0
@@ -59,7 +59,6 @@ def _apply_gate(qc: QuantumCircuit, gate: Gate, qubit_index: dict[str, int]) -> 
 
 def qiskit_circuit_to_code(qc: QuantumCircuit) -> str:
     """Render a QuantumCircuit as readable, standalone Qiskit Python source."""
-
     lines = [
         "from qiskit import QuantumCircuit",
         "",
@@ -86,6 +85,11 @@ def qiskit_circuit_to_code(qc: QuantumCircuit) -> str:
     return "\n".join(lines)
 
 
+def qiskit_circuit_to_qasm(qc: QuantumCircuit) -> str:
+    """Render a QuantumCircuit as OpenQASM 2.0 source."""
+    return qasm2_dumps(qc)
+
+
 def run_simulation(circuit: Circuit, shots: int = 1024) -> dict[str, int]:
     """
     Builds the Qiskit circuit and runs it on Aer's simulator, returning
@@ -105,3 +109,24 @@ def run_simulation(circuit: Circuit, shots: int = 1024) -> dict[str, int]:
     result = job.result()
 
     return result.get_counts()
+
+
+def compute_bloch_vectors(circuit: Circuit) -> list[BlochVector]:
+    qc = build_qiskit_circuit(circuit)
+
+    # Drop measurement instructions — Statevector simulation requires
+    # a circuit with no mid-circuit or terminal measurements.
+    qc_no_measure = qc.remove_final_measurements(inplace=False)
+
+    sv = Statevector.from_instruction(qc_no_measure)
+    n = qc_no_measure.num_qubits
+
+    vectors = []
+    for q in range(n):
+        others = [i for i in range(n) if i != q]
+        rho = partial_trace(sv, others) if others else sv.to_operator()
+        x = 2 * rho.data[0, 1].real
+        y = -2 * rho.data[0, 1].imag
+        z = (rho.data[0, 0] - rho.data[1, 1]).real
+        vectors.append(BlochVector(qubit=q, x=x, y=y, z=z))
+    return vectors

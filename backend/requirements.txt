@@ -12,7 +12,7 @@ qiskit
 qiskit-aer
  
 # Database — used by db/session.py for init_db(). Swap sqlite driver for
-# psycopg2-binary (or asyncpg) if you move off SQLite to Postgres later.
+# psycopg2-binary (or asyncpg) if you move off SQLite to Postgres la
 ## I need to fix the Database so that it aligns with what I'm actually using (I'm using 
 ##SQLite for now. 
 # There also needs to be sqlmodel here for now. 

@@ -16,6 +16,14 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+class User(SQLModel, table=True):
+    __tablename__ = "users"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    email: str = Field(unique=True, index=True)
+    hashed_password: str
+    created_at: datetime = Field(default_factory=_utcnow)
+
 class CircuitRecord(SQLModel, table=True):
     __tablename__ = "circuits"
 
@@ -26,8 +34,13 @@ class CircuitRecord(SQLModel, table=True):
     # The circuit's qubits+gates, stored as-is. Validated on the way in
     # by the Circuit Pydantic model at the API boundary — by the time
     # it's written here, it's already known-good JSON.
-    data: dict = Field(sa_column=Column(JSON))
+   
+    root_id: Optional[int] = Field(default=None, index=True, foreign_key="circuits.id")
+    version: int = Field(default=1)
 
+    qasm: Optional[str] = Field(default=None)
+    data: dict = Field(sa_column=Column(JSON)) 
+ 
     created_at: datetime = Field(default_factory=_utcnow)
     updated_at: datetime = Field(default_factory=_utcnow)
 
