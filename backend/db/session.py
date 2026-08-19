@@ -1,10 +1,9 @@
 """
 Database engine + session handling.
 
-SQLite for local dev — zero setup, single file on disk. To move to
-Postgres later, change DATABASE_URL and add `psycopg2-binary` to
-requirements.txt; nothing else in this file or the models needs to
-change, since SQLModel/SQLAlchemy abstract the dialect.
+Schema is managed by Alembic migrations (see backend/alembic/), not by
+create_all(). init_db() is kept only as a convenience for quick local
+scratch/testing — it is not called on app startup.
 """
 
 import os
@@ -12,15 +11,15 @@ from sqlmodel import SQLModel, Session, create_engine
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./quantum_visualizer.db")
 
-# check_same_thread=False is only needed for SQLite (FastAPI can call
-# from multiple threads); it's a no-op / unused for other databases.
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
 
 
 def init_db() -> None:
-    """Create tables if they don't exist. Fine for dev; use Alembic
-    migrations instead once the schema needs to evolve in production."""
+    """Create tables directly from models, bypassing Alembic. Only for
+    quick local experiments — never call this against a database that
+    Alembic is managing, since it can silently diverge from migration
+    history."""
     SQLModel.metadata.create_all(engine)
 
 

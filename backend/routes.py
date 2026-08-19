@@ -21,18 +21,13 @@ from translator import (
     build_qiskit_circuit, qiskit_circuit_to_code,
     qiskit_circuit_to_qasm, run_simulation, compute_bloch_vectors,
 )
-from db.session import get_session, init_db
+from db.session import get_session
 from db.models import CircuitRecord, RunRecord, User
 from auth import hash_password, verify_password, create_access_token, decode_access_token
 
 app = FastAPI(title="QuantumVisualizer API")
 router = APIRouter(prefix="/circuits", tags=["circuits"])
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-@app.on_event("startup")
-def on_startup():
-    init_db()
 
 
 app.add_middleware(
@@ -46,7 +41,6 @@ app.add_middleware(
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
 
 # --- Auth ---
 

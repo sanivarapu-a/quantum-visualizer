@@ -26,4 +26,4 @@ passlib[bcrypt]
 python-jose[cryptography]
 
 #environment variables
-python-dotenv
+python-dotenvalembic
