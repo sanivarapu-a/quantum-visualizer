@@ -1,4 +1,5 @@
 
+Tech Stack: Next.js, Python! 
 
 URL - https://quantum-vis-vercel.vercel.app/composer 
 
